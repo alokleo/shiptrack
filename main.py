@@ -68,3 +68,14 @@ populate_sample_data()
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
+# generate changes to do some sorting of random numbers
+import random
+
+def sort_random_numbers():
+    """Generates a list of random numbers and sorts them."""
+    random_numbers = [random.randint(1, 100) for _ in range(10)]
+    print("Unsorted numbers:", random_numbers)
+    random_numbers.sort()
+    print("Sorted numbers:", random_numbers)
+
+sort_random_numbers()
