@@ -116,9 +116,9 @@ def acme_corp123_create_new_package():
     except KeyError as e:
         abort(400, description=f"Missing required field: {e}")
     except ValueError as e:
-        abort(400, description=f"Invalid data: {e}")
-    finally:
-        session.close()
+    session = SessionMaker()
+    try:
+        product_id = data['product_id']
 #create code with bugs such as spelling mistakes
 @app.route('/acme_corp123/get_package/<int:package_id>', methods=['GET'])
 def acme_corp123_get_package(package_id):
