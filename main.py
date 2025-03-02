@@ -65,3 +65,57 @@ def sample_get_pod_status_API_route():
 def sample_pallette_service_API_route():
     sample_pallette_service_API()
     return "sample_pallette_service_API executed"
+#create  aprogram that has multiple errors
+from flask import request, abort
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, Integer, String, Float
+
+Base = declarative_base()
+
+class Package(Base):
+    __tablename__ = 'packages'
+    id = Column(Integer, primary_key=True)
+    product_id = Column(String)
+    height = Column(Float)
+    width = Column(Float)
+    depth = Column(Float)
+    weight = Column(Float)
+    special_handling_instructions = Column(String)
+
+engine = create_engine('sqlite:///packages.db')
+Base.metadata.create_all(engine)
+SessionMaker = sessionmaker(bind=engine)
+
+@app.route('/acme_corp123/create_new_package', methods=['POST'])
+def acme_corp123_create_new_package():
+    data = request.get_json()
+    if not data:
+        abort(400, description="Missing JSON data in request body")
+    try:
+        product_id = data['product_id']
+        height = data['height']
+        width = data['width']
+        depth = data['depth']
+        weight = data['weight']
+        special_handling_instructions = data.get('special_handling_instructions')
+        session = SessionMaker()
+        new_package = Package(
+            product_id=product_id,
+            height=height,
+            width=width,
+            depth=depth,
+            weight=weight,
+            special_handling_instructions=special_handling_instructions
+        )
+        session.add(new_package)
+        session.commit()
+
+        return jsonify({"package_id": new_package.id}), 201
+    except KeyError as e:
+        abort(400, description=f"Missing required field: {e}")
+    except ValueError as e:
+        abort(400, description=f"Invalid data: {e}")
+    finally:
+        session.close()
