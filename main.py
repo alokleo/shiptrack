@@ -44,3 +44,24 @@ def readiness():
     Returns a readiness probe response.
     """
     return jsonify({"status": "ready", "code": 200, "timestamp": time.time()})
+#genartae code for liveness
+from remote_context_snippets import sample_harvest_API, sample_post_pod_status_API, sample_get_pod_status_API, sample_pallette_service_API
+@app.route('/sample_harvest_API', methods=['GET'])
+def sample_harvest_API_route():
+    sample_harvest_API()
+    return "sample_harvest_API executed"
+
+@app.route('/sample_post_pod_status_API', methods=['POST'])
+def sample_post_pod_status_API_route():
+    sample_post_pod_status_API()
+    return "sample_post_pod_status_API executed"
+
+@app.route('/sample_get_pod_status_API', methods=['GET'])
+def sample_get_pod_status_API_route():
+    sample_get_pod_status_API()
+    return "sample_get_pod_status_API executed"
+
+@app.route('/sample_pallette_service_API', methods=['POST'])
+def sample_pallette_service_API_route():
+    sample_pallette_service_API()
+    return "sample_pallette_service_API executed"
