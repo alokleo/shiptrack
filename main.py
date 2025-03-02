@@ -1,139 +1,76 @@
 from flask import Flask, jsonify
+import requests
+import logging
 
 app = Flask(__name__)
 
-# --- Backend Handlers (similar to backend_handlers.py) ---
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def discovery():
     """
-    Returns metadata about the service.
+    Returns a JSON response with metadata about the shipping service.
     """
+    logger.info("Handling /discovery request")
     return jsonify({
-        "name": "shipping",  # Or another suitable name for your application
-        "version": "1.0",  # Or the current version
-        "owners": ["ameerabb", "lonestar"], # Or the contact people of the app.
-        "team": "genAIs", # Or the name of your team.
-        "organization": "acme" # Or your organization name.
+        "name": "shipping",
+        "version": "1.0",
+        "owners": ["ameerabb", "lonestar"],
+        "team": "genAIs",
+        "organization": "acme"
     })
 
-# --- Routes ---
-
+def get_app_details():
+    """
+    Fetches app details from the /discovery endpoint of another service.
+    """
+    logger.info("Fetching app details from another service's /discovery endpoint")
+    try:
+        response = requests.get('http://localhost:8080/discovery')  # Using port 8080 to target the Go example service.
+        response.raise_for_status()  # Raise an error for bad status codes
+        data = response.json()
+        logger.info(f"Successfully fetched app details: {data}")
+        return data.get('name', 'Unknown App'), data.get('version', 'Unknown Version')
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error fetching app details: {e}")
+        return "Unknown App", "Unknown Version"
+    
 @app.route('/discovery', methods=['GET'])
 def discovery_route():
     """
-    Exposes the discovery metadata as a GET endpoint.
+    Flask route for the /discovery endpoint.
     """
     return discovery()
 
+@app.route('/health', methods=['GET'])
+def health_route():
+    """
+    Returns a JSON with status of ok
+    """
+    logger.info("Handling /health request")
+    return jsonify({"status":"ok"})
+
+@app.route('/details', methods=['GET'])
+def get_app_details_route():
+    name, version = get_app_details()
+    return jsonify({"name": name, "version": version})
+
 
 if __name__ == '__main__':
-    app.run(debug=True, port=8000)  # Run on port 8000 (or your preferred port)
+    app.run(debug=True, port=8000)
 # Generate standard liveness and readiness routes
-import time
-
+from remote_context_snippets import liveness, readiness
 @app.route('/live', methods=['GET'])
-def liveness():
+def live_route():
     """
-    Returns a liveness probe response.
+    Flask route for the /live endpoint.
     """
-    return jsonify({"status": "live", "code": 200, "timestamp": time.time()})
+    return liveness()
 
 @app.route('/ready', methods=['GET'])
-def readiness():
+def ready_route():
     """
-    Returns a readiness probe response.
+    Flask route for the /ready endpoint.
     """
-    return jsonify({"status": "ready", "code": 200, "timestamp": time.time()})
-#genartae code for liveness
-from remote_context_snippets import sample_harvest_API, sample_post_pod_status_API, sample_get_pod_status_API, sample_pallette_service_API
-@app.route('/sample_harvest_API', methods=['GET'])
-def sample_harvest_API_route():
-    sample_harvest_API()
-    return "sample_harvest_API executed"
-
-@app.route('/sample_post_pod_status_API', methods=['POST'])
-def sample_post_pod_status_API_route():
-    sample_post_pod_status_API()
-    return "sample_post_pod_status_API executed"
-
-@app.route('/sample_get_pod_status_API', methods=['GET'])
-def sample_get_pod_status_API_route():
-    sample_get_pod_status_API()
-    return "sample_get_pod_status_API executed"
-
-@app.route('/sample_pallette_service_API', methods=['POST'])
-def sample_pallette_service_API_route():
-    sample_pallette_service_API()
-    return "sample_pallette_service_API executed"
-#create  aprogram that has multiple errors
-from flask import request, abort
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, Float
-
-Base = declarative_base()
-
-class Package(Base):
-    __tablename__ = 'packages'
-    id = Column(Integer, primary_key=True)
-    product_id = Column(String)
-    height = Column(Float)
-    width = Column(Float)
-    depth = Column(Float)
-    weight = Column(Float)
-    special_handling_instructions = Column(String)
-
-engine = create_engine('sqlite:///packages.db')
-Base.metadata.create_all(engine)
-SessionMaker = sessionmaker(bind=engine)
-
-@app.route('/acme_corp123/create_new_package', methods=['POST'])
-def acme_corp123_create_new_package():
-    data = request.get_json()
-    if not data:
-        abort(400, description="Missing JSON data in request body")
-    try:
-        product_id = data['product_id']
-        height = data['height']
-        width = data['width']
-        depth = data['depth']
-        weight = data['weight']
-        special_handling_instructions = data.get('special_handling_instructions')
-        session = SessionMaker()
-        new_package = Package(
-            product_id=product_id,
-            height=height,
-            width=width,
-            depth=depth,
-            weight=weight,
-            special_handling_instructions=special_handling_instructions
-        )
-        session.add(new_package)
-        session.commit()
-
-        return jsonify({"package_id": new_package.id}), 201
-    except KeyError as e:
-        abort(400, description=f"Missing required field: {e}")
-    except ValueError as e:
-        abort(400, description=f"Invalid data: {e}")
-    finally:
-        session.close()
-#create code with bugs such as spelling mistakes
-@app.route('/acme_corp123/get_package/<int:package_id>', methods=['GET'])
-def acme_corp123_get_package(package_id):
-    session = SessionMaker()
-    package = session.query(Package).filter_by(id=package_id).first()
-    session.close()
-    if package:
-        return jsonify({
-            "package_id": package.id,
-            "product_id": package.product_id,
-            "height": package.height,
-            "width": package.width,
-            "depth": package.depth,
-            "weight": package.weight,
-            "special_handling_instructions": package.special_handling_instructions
-        }), 200
-    else:
-        abort(404, description="Package not found")
+    return readiness()
