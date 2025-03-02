@@ -119,3 +119,21 @@ def acme_corp123_create_new_package():
         abort(400, description=f"Invalid data: {e}")
     finally:
         session.close()
+#create code with bugs such as spelling mistakes
+@app.route('/acme_corp123/get_package/<int:package_id>', methods=['GET'])
+def acme_corp123_get_package(package_id):
+    session = SessionMaker()
+    package = session.query(Package).filter_by(id=package_id).first()
+    session.close()
+    if package:
+        return jsonify({
+            "package_id": package.id,
+            "product_id": package.product_id,
+            "height": package.height,
+            "width": package.width,
+            "depth": package.depth,
+            "weight": package.weight,
+            "special_handling_instructions": package.special_handling_instructions
+        }), 200
+    else:
+        abort(404, description="Package not found")
