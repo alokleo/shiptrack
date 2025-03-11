@@ -1,13 +1,10 @@
 from flask import Flask, jsonify
-import requests
 
 app = Flask(__name__)
 
-# --- Discovery API Implementation ---
-@app.route('/discovery', methods=['GET'])
 def discovery():
     """
-    Returns metadata about the shipping service.
+    Returns a JSON response containing discovery information about the shipping service.
     """
     return jsonify({
         "name": "shipping",
@@ -17,26 +14,25 @@ def discovery():
         "organization": "acme"
     })
 
-
-# --- Example Usage (Optional, for demonstration) ---
-@app.route('/app-details', methods=['GET'])
-def get_app_details():
-    """Fetches app details from the /discovery endpoint."""
-    try:
-        response = requests.get('http://localhost:5000/discovery')  # Adjust URL if needed, 5000 is default flask port
-        response.raise_for_status()  # Raise an error for bad status codes
-        data = response.json()
-        return jsonify({"name": data.get('name', 'Unknown App'), "version": data.get('version', 'Unknown Version')})
-    except requests.exceptions.RequestException as e:
-        print(f"Error fetching app details: {e}")
-        return jsonify({"error":"Error fetching app details"}), 500
+@app.route('/discovery', methods=['GET'])
+def discovery_route():
+    """
+    Flask route for the /discovery endpoint.
+    Calls the discovery function and returns its result.
+    """
+    return discovery()
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
-#Generate error condition
+    app.run(debug=True, port=8000)
+#Generate new error conditions
 @app.errorhandler(404)
-def page_not_found(e):
-    """
-    Returns a custom 404 error message.
-    """
-    return jsonify({"error": "Page not found"}), 404
+def not_found(error):
+    return jsonify({'error': 'Not found'}), 404
+
+@app.errorhandler(500)
+def internal_server_error(error):
+    return jsonify({'error': 'Internal Server Error'}), 500
+
+@app.errorhandler(400)
+def bad_request(error):
+    return jsonify({'error': 'Bad Request'}), 400
